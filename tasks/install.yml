@@ -8,18 +8,19 @@
     group: "{{ appimage_group }}"
     mode: '0755'
 
-- name: Install | Manage app installatio simple.
+- name: Install | Manage app installation simple.
   ansible.builtin.include_tasks: install_simple.yml
   vars:
     install_simple_url: "{{ item }}"
   when:
-    - item is string
-    - item is not mapping
+    - item is string or (item is mapping and item.name is not defined and item.state is not defined)
   loop: "{{ appimage_download_urls }}"
 
 - name: Install | Manage app installation complex.
   ansible.builtin.include_tasks: install_complex.yml
   vars:
     install_complex_url: "{{ item }}"
-  when: item is mapping
+  when:
+    - item is mapping
+    - item.name is defined or item.state is defined
   loop: "{{ appimage_download_urls }}"

@@ -1,23 +1,41 @@
 ---
 # Simple installation routine
+- name: Install simple | Set helper variables
+  ansible.builtin.set_fact:
+    _simple_url: "{{ install_simple_url if install_simple_url is string else install_simple_url.url }}"
+    _simple_sha256: "{{ install_simple_url.sha256 if (install_simple_url is mapping and install_simple_url.sha256 is defined) else none }}"
+
 - name: Install simple | Check if the app is already in place.
   ansible.builtin.stat:
-    path: "{{ appimage_installation_dir }}/{{ install_simple_url | basename }}"
+    path: "{{ appimage_installation_dir }}/{{ _simple_url | basename }}"
+    checksum_algorithm: sha256
   register: _appimage_install_status
+
+- name: Install simple | Remove if sha256 doesn't match
+  become: true
+  ansible.builtin.file:
+    state: absent
+    path: "{{ appimage_installation_dir }}/{{ _simple_url | basename }}"
+  when:
+    - _simple_sha256 is not none
+    - _appimage_install_status.stat.exists
+    - _appimage_install_status.stat.checksum != _simple_sha256
 
 - name: Install simple | Download missing appimages.
   become: true
   ansible.builtin.get_url:
-    url: "{{ install_simple_url }}"
+    url: "{{ _simple_url }}"
     mode: '0555'
-    dest: "{{ appimage_installation_dir }}/{{ install_simple_url | basename }}"
-  when: not _appimage_install_status.stat.exists
+    dest: "{{ appimage_installation_dir }}/{{ _simple_url | basename }}"
+  when: >-
+    not _appimage_install_status.stat.exists or
+    (_simple_sha256 is not none and _appimage_install_status.stat.exists and _appimage_install_status.stat.checksum != _simple_sha256)
 
 - name: Install simple | Create appalias
   become: true
   ansible.builtin.file:
     state: link
-    src: "{{ appimage_installation_dir }}/{{ install_simple_url | basename }}"
-    dest: "{{ appimage_binary_dir }}/{{ (install_simple_url | basename).split('-')[0] | lower }}"
+    src: "{{ appimage_installation_dir }}/{{ _simple_url | basename }}"
+    dest: "{{ appimage_binary_dir }}/{{ (_simple_url | basename).split('-')[0] | lower }}"
     owner: root
     group: root

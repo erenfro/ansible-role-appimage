@@ -16,15 +16,28 @@
     - name: Install complex | Check if "{{ install_complex_url.url | basename + ' is in place.' }}"
       ansible.builtin.stat:
         path: "{{ appimage_installation_dir }}/{{ install_complex_url.url | basename }}"
+        checksum_algorithm: sha256
       register: _appimage_install_status
 
-    - name: Install complex | Download missing appimages for "{{ appimage_application_name }}"
+    - name: Install complex | Remove if sha256 doesn't match
+      become: true
+      ansible.builtin.file:
+        state: absent
+        path: "{{ appimage_installation_dir }}/{{ install_complex_url.url | basename }}"
+      when:
+        - install_complex_url.sha256 is defined
+        - _appimage_install_status.stat.exists
+        - _appimage_install_status.stat.checksum != install_complex_url.sha256
+
+    - name: Install complex | Download missing appimages for "{{ appimage_application_name | trim }}"
       become: true
       ansible.builtin.get_url:
         url: "{{ install_complex_url.url }}"
         mode: '0555'
         dest: "{{ appimage_installation_dir }}/{{ install_complex_url.url | basename }}"
-      when: not _appimage_install_status.stat.exists
+      when: >-
+        not _appimage_install_status.stat.exists or
+        (install_complex_url.sha256 is defined and _appimage_install_status.stat.exists and _appimage_install_status.stat.checksum != install_complex_url.sha256)
 
     - name: Install complex | Create appalias
       become: true
@@ -47,7 +60,7 @@
         state: absent
         path: "{{ appimage_binary_dir }}/{{ appimage_application_name | trim }}"
 
-    - name: Install complex | Remoe appimage file "{{ install_complex_url.url | basename }}"
+    - name: Install complex | Remove appimage file "{{ install_complex_url.url | basename }}"
       become: true
       ansible.builtin.file:
         state: absent

@@ -2,13 +2,14 @@
 # List of download urls for appimage files.
 #
 # Each list can either contain a plan appimage file URL or a more specific
-# dict with `name`, `url` and `state.
+# dict with `name`, `url`, `sha256` and `state.
 #
 # Example:
 #   appimage_download_urls:
 #     - https://example.com/appimage.image
 #     - name: my_application
 #       url: https://example.com/appimage.image
+#       sha256: "..."
 #       state: present
 # doca tags:role
 appimage_download_urls: []

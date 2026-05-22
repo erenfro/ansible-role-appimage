@@ -54,8 +54,10 @@ The following example would install two appimage applications:
 
 The first application _appimage01_ will be installed and can be started by running `appimage01`.
 The second application _appimage02_ will be installed and can be started by running `my_app`.
+The third application _appimage03_ will be installed with a SHA256 checksum verification.
 
 The parameter `state` is optional when installing, mandatory when removing and needs to be set to `state: absent` then.
+The parameter `sha256` is optional and will be used to verify the integrity of the downloaded file. If the file exists but the checksum doesn't match, it will be deleted and re-downloaded.
 
 ```yaml
 ---
@@ -66,6 +68,8 @@ The parameter `state` is optional when installing, mandatory when removing and n
       - name: 'my_app'
         url: 'https://example.com/appimage02.image'
         state: present
+      - url: 'https://example.com/appimage03.image'
+        sha256: '...'
   roles:
      - role: spreadcat.appimage
 ```
